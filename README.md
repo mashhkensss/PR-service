@@ -56,3 +56,4 @@ make cover       # сбор покрытия
 
 - `/health/live` — процесс жив.
 - `/health/ready` — проверяет доступность БД (`PingContext`).
+- `/stats/assignments` и `/stats/summary` возвращают детальную и агрегированную статистику назначений ревьюеров.

@@ -1,0 +1,9 @@
+.env
+.env.*
+/bin/
+coverage.out
+.DS_Store
+.idea/
+.cache/
+.gomodcache/
+tmp/

@@ -73,6 +73,7 @@ func NewRouter(cfg RouterConfig) http.Handler {
 
 	r.Route("/stats", func(r chi.Router) {
 		r.With(cfg.adminOnly()).Get("/assignments", cfg.StatsHandler.GetAssignmentStats)
+		r.With(cfg.adminOnly()).Get("/summary", cfg.StatsHandler.GetSummary)
 	})
 
 	return r

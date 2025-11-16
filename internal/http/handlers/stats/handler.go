@@ -12,6 +12,7 @@ import (
 
 type Handler interface {
 	GetAssignmentStats(w http.ResponseWriter, r *http.Request)
+	GetSummary(w http.ResponseWriter, r *http.Request)
 }
 
 type handler struct {
@@ -30,6 +31,28 @@ func (h *handler) GetAssignmentStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.JSON(w, http.StatusOK, stats)
+}
+
+func (h *handler) GetSummary(w http.ResponseWriter, r *http.Request) {
+	stats, err := h.service.GetAssignments(r.Context())
+	if err != nil {
+		httperror.Respond(w, err, h.logger, logFields(r)...)
+		return
+	}
+	totalAssignments := 0
+	for _, count := range stats.ByUser {
+		totalAssignments += count
+	}
+	summary := struct {
+		UsersCount        int `json:"users_count"`
+		PullRequestsCount int `json:"pull_requests_count"`
+		AssignmentsTotal  int `json:"assignments_total"`
+	}{
+		UsersCount:        len(stats.ByUser),
+		PullRequestsCount: len(stats.ByPullRequest),
+		AssignmentsTotal:  totalAssignments,
+	}
+	response.JSON(w, http.StatusOK, summary)
 }
 
 func logFields(r *http.Request, extra ...any) []any {
