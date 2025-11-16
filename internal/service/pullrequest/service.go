@@ -8,26 +8,51 @@ import (
 
 	"github.com/mashhkensss/PR-service/internal/domain"
 	"github.com/mashhkensss/PR-service/internal/domain/pullrequest"
+	domainteam "github.com/mashhkensss/PR-service/internal/domain/team"
 	"github.com/mashhkensss/PR-service/internal/domain/user"
-	svc "github.com/mashhkensss/PR-service/internal/service"
+	"github.com/mashhkensss/PR-service/internal/service"
+	"github.com/mashhkensss/PR-service/internal/service/assignment"
 )
 
-type service struct {
-	teams    svc.TeamRepository
-	users    svc.UserRepository
-	prs      svc.PullRequestRepository
-	tx       svc.TxRunner
-	assigner svc.AssignmentStrategy
+type TeamRepository interface {
+	GetTeam(ctx context.Context, name domain.TeamName) (domainteam.Team, error)
+}
+
+type UserRepository interface {
+	GetUser(ctx context.Context, id domain.UserID) (user.User, error)
+}
+
+type PullRequestRepository interface {
+	CreatePullRequest(ctx context.Context, pr pullrequest.PullRequest) error
+	GetPullRequestForUpdate(ctx context.Context, id domain.PullRequestID) (pullrequest.PullRequest, error)
+	UpdatePullRequest(ctx context.Context, pr pullrequest.PullRequest) error
+}
+
+type Service interface {
+	Create(ctx context.Context, pr pullrequest.PullRequest) (pullrequest.PullRequest, error)
+	Merge(ctx context.Context, id domain.PullRequestID, mergedAt time.Time) (pullrequest.PullRequest, error)
+	Reassign(ctx context.Context, prID domain.PullRequestID, oldReviewer domain.UserID) (pullrequest.PullRequest, domain.UserID, error)
+}
+
+type svc struct {
+	teams    TeamRepository
+	users    UserRepository
+	prs      PullRequestRepository
+	tx       service.TxRunner
+	assigner assignment.Strategy
 }
 
 func New(
-	teams svc.TeamRepository,
-	users svc.UserRepository,
-	prs svc.PullRequestRepository,
-	tx svc.TxRunner,
-	assigner svc.AssignmentStrategy,
-) svc.PullRequestService {
-	return &service{
+	teams TeamRepository,
+	users UserRepository,
+	prs PullRequestRepository,
+	tx service.TxRunner,
+	assigner assignment.Strategy,
+) Service {
+	if assigner == nil {
+		assigner = assignment.NewStrategy(nil)
+	}
+	return &svc{
 		teams:    teams,
 		users:    users,
 		prs:      prs,
@@ -36,12 +61,12 @@ func New(
 	}
 }
 
-func (s *service) Create(ctx context.Context, pr pullrequest.PullRequest) (pullrequest.PullRequest, error) {
+func (s *svc) Create(ctx context.Context, pr pullrequest.PullRequest) (pullrequest.PullRequest, error) {
 	if s.assigner == nil {
 		return pullrequest.PullRequest{}, fmt.Errorf("assignment strategy is not configured")
 	}
 
-	err := svc.ExecInTx(ctx, s.tx, func(ctx context.Context) error {
+	err := service.ExecInTx(ctx, s.tx, func(ctx context.Context) error {
 		author, err := s.users.GetUser(ctx, pr.AuthorID())
 
 		if err != nil {
@@ -83,9 +108,9 @@ func (s *service) Create(ctx context.Context, pr pullrequest.PullRequest) (pullr
 	return pr, nil
 }
 
-func (s *service) Merge(ctx context.Context, id domain.PullRequestID, mergedAt time.Time) (pullrequest.PullRequest, error) {
-	pr, err := svc.RunInTx(ctx, s.tx, func(ctx context.Context) (pullrequest.PullRequest, error) {
-		existing, err := s.prs.GetPullRequest(ctx, id)
+func (s *svc) Merge(ctx context.Context, id domain.PullRequestID, mergedAt time.Time) (pullrequest.PullRequest, error) {
+	pr, err := service.RunInTx(ctx, s.tx, func(ctx context.Context) (pullrequest.PullRequest, error) {
+		existing, err := s.prs.GetPullRequestForUpdate(ctx, id)
 
 		if err != nil {
 			return pullrequest.PullRequest{}, err
@@ -108,7 +133,7 @@ func (s *service) Merge(ctx context.Context, id domain.PullRequestID, mergedAt t
 	return pr, nil
 }
 
-func (s *service) Reassign(ctx context.Context, prID domain.PullRequestID, oldReviewer domain.UserID) (pullrequest.PullRequest, domain.UserID, error) {
+func (s *svc) Reassign(ctx context.Context, prID domain.PullRequestID, oldReviewer domain.UserID) (pullrequest.PullRequest, domain.UserID, error) {
 	if s.assigner == nil {
 		return pullrequest.PullRequest{}, "", fmt.Errorf("assignment strategy is not configured")
 	}
@@ -118,8 +143,8 @@ func (s *service) Reassign(ctx context.Context, prID domain.PullRequestID, oldRe
 		newR domain.UserID
 	}
 
-	out, err := svc.RunInTx(ctx, s.tx, func(ctx context.Context) (result, error) {
-		pr, err := s.prs.GetPullRequest(ctx, prID)
+	out, err := service.RunInTx(ctx, s.tx, func(ctx context.Context) (result, error) {
+		pr, err := s.prs.GetPullRequestForUpdate(ctx, prID)
 
 		if err != nil {
 			return result{}, err
@@ -194,3 +219,5 @@ func filterCandidates(pr pullrequest.PullRequest, candidates []user.User) []user
 
 	return result
 }
+
+var _ Service = (*svc)(nil)

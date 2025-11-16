@@ -4,26 +4,40 @@ import (
 	"context"
 	"fmt"
 
-	svc "github.com/mashhkensss/PR-service/internal/service"
+	"github.com/mashhkensss/PR-service/internal/domain"
 )
 
-type service struct {
-	repo svc.StatsRepository
+type Repository interface {
+	AssignmentsPerUser(ctx context.Context) (map[domain.UserID]int, error)
+	AssignmentsPerPullRequest(ctx context.Context) (map[domain.PullRequestID]int, error)
 }
 
-func New(repo svc.StatsRepository) svc.StatsService {
+type AssignmentsStats struct {
+	ByUser        map[string]int `json:"by_user"`
+	ByPullRequest map[string]int `json:"by_pull_request"`
+}
+
+type Service interface {
+	GetAssignments(ctx context.Context) (AssignmentsStats, error)
+}
+
+type service struct {
+	repo Repository
+}
+
+func New(repo Repository) Service {
 	return &service{repo: repo}
 }
 
-func (s *service) GetAssignments(ctx context.Context) (svc.AssignmentsStats, error) {
+func (s *service) GetAssignments(ctx context.Context) (AssignmentsStats, error) {
 	userStats, err := s.repo.AssignmentsPerUser(ctx)
 	if err != nil {
-		return svc.AssignmentsStats{}, fmt.Errorf("stats per user: %w", err)
+		return AssignmentsStats{}, fmt.Errorf("stats per user: %w", err)
 	}
 
 	prStats, err := s.repo.AssignmentsPerPullRequest(ctx)
 	if err != nil {
-		return svc.AssignmentsStats{}, fmt.Errorf("stats per pull request: %w", err)
+		return AssignmentsStats{}, fmt.Errorf("stats per pull request: %w", err)
 	}
 
 	byUser := make(map[string]int, len(userStats))
@@ -36,8 +50,10 @@ func (s *service) GetAssignments(ctx context.Context) (svc.AssignmentsStats, err
 		byPR[string(id)] = count
 	}
 
-	return svc.AssignmentsStats{
+	return AssignmentsStats{
 		ByUser:        byUser,
 		ByPullRequest: byPR,
 	}, nil
 }
+
+var _ Service = (*service)(nil)

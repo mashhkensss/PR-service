@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"errors"
+
 	"github.com/mashhkensss/PR-service/internal/domain"
 	domainuser "github.com/mashhkensss/PR-service/internal/domain/user"
 )
@@ -14,7 +16,7 @@ type User struct {
 
 type SetUserActiveRequest struct {
 	UserID   string `json:"user_id" validate:"required"`
-	IsActive bool   `json:"is_active"`
+	IsActive *bool  `json:"is_active"`
 }
 
 func UserFromDomain(u domainuser.User) User {
@@ -33,4 +35,21 @@ func (u User) ToDomain() (domainuser.User, error) {
 		domain.TeamName(u.TeamName),
 		u.IsActive,
 	)
+}
+
+func (r SetUserActiveRequest) Validate() error {
+	if r.UserID == "" {
+		return errors.New("user_id is required")
+	}
+	if r.IsActive == nil {
+		return errors.New("is_active is required")
+	}
+	return nil
+}
+
+func (r SetUserActiveRequest) IsActiveValue() bool {
+	if r.IsActive == nil {
+		return false
+	}
+	return *r.IsActive
 }

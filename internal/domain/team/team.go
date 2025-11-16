@@ -32,7 +32,10 @@ func New(teamName domain.TeamName, members []domainuser.User) (Team, error) {
 	return t, nil
 }
 
-func (t Team) TeamName() domain.TeamName {
+func (t *Team) TeamName() domain.TeamName {
+	if t == nil {
+		return ""
+	}
 	return t.teamName
 }
 
@@ -54,7 +57,10 @@ func (t *Team) UpsertMember(u domainuser.User) error {
 	return nil
 }
 
-func (t Team) Members() []domainuser.User {
+func (t *Team) Members() []domainuser.User {
+	if t == nil {
+		return nil
+	}
 	result := make([]domainuser.User, 0, len(t.members))
 
 	for _, m := range t.members {
@@ -71,14 +77,20 @@ func (t Team) Members() []domainuser.User {
 	return result
 }
 
-func (t Team) Member(id domain.UserID) (domainuser.User, bool) {
+func (t *Team) Member(id domain.UserID) (domainuser.User, bool) {
+	if t == nil {
+		return domainuser.User{}, false
+	}
 	m, ok := t.members[id]
 	return m, ok
 }
 
 // ActiveMembers возвращает активных членов команды, при этом позволяет исключить из переданного списка
 // автора, а при reassignment – старого ревьюера
-func (t Team) ActiveMembers(exclude domain.UserID) []domainuser.User {
+func (t *Team) ActiveMembers(exclude domain.UserID) []domainuser.User {
+	if t == nil {
+		return nil
+	}
 	res := make([]domainuser.User, 0, len(t.members))
 
 	for _, m := range t.members {

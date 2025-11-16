@@ -5,6 +5,7 @@ import "errors"
 var (
 	ErrTeamExists               = errors.New("team already exists")
 	ErrTeamMismatch             = errors.New("user belongs to another team")
+	ErrTeamAccessDenied         = errors.New("team access denied")
 	ErrUserExists               = errors.New("user already exists")
 	ErrPullRequestExists        = errors.New("pull request already exists")
 	ErrPullRequestAlreadyMerged = errors.New("pull request already merged")
@@ -15,5 +16,4 @@ var (
 	ErrNoActiveCandidate        = errors.New("no active replacement candidate in team")
 	ErrInvalidIdentifier        = errors.New("identifier must not be empty")
 	ErrInvalidName              = errors.New("name must not be empty")
-	ErrInvalidStatusTransition  = errors.New("invalid pull request status transition")
 )

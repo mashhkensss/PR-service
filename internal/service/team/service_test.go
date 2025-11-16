@@ -41,7 +41,7 @@ func (f fakeTx) WithinTx(ctx context.Context, fn func(ctx context.Context) error
 
 func TestService_AddTeam(t *testing.T) {
 	expected, _ := domainteam.New("backend", nil)
-	s := &service{
+	s := &svc{
 		repo: testTeamRepo{
 			saveFn: func(ctx context.Context, aggregate domainteam.Team) error {
 				if aggregate.TeamName() != expected.TeamName() {
@@ -63,7 +63,7 @@ func TestService_AddTeam(t *testing.T) {
 
 func TestService_GetTeam(t *testing.T) {
 	want, _ := domainteam.New("backend", nil)
-	s := &service{
+	s := &svc{
 		repo: testTeamRepo{
 			getFn: func(ctx context.Context, name domain.TeamName) (domainteam.Team, error) {
 				return want, nil
@@ -81,7 +81,7 @@ func TestService_GetTeam(t *testing.T) {
 
 func TestService_AddTeamTxError(t *testing.T) {
 	unexpected := errors.New("boom")
-	s := &service{
+	s := &svc{
 		repo: testTeamRepo{},
 		tx:   fakeTx{err: unexpected},
 	}

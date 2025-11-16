@@ -2,6 +2,10 @@ package service
 
 import "context"
 
+type TxRunner interface {
+	WithinTx(ctx context.Context, fn func(ctx context.Context) error) error
+}
+
 func RunInTx[T any](ctx context.Context, tx TxRunner, fn func(ctx context.Context) (T, error)) (T, error) {
 	var zero T
 	if tx == nil {

@@ -71,6 +71,10 @@ func (r testPRRepo) GetPullRequest(ctx context.Context, id domain.PullRequestID)
 	return pullrequest.PullRequest{}, errors.New("not found")
 }
 
+func (r testPRRepo) GetPullRequestForUpdate(ctx context.Context, id domain.PullRequestID) (pullrequest.PullRequest, error) {
+	return r.GetPullRequest(ctx, id)
+}
+
 func (r testPRRepo) UpdatePullRequest(ctx context.Context, pr pullrequest.PullRequest) error {
 	if r.updateFn != nil {
 		return r.updateFn(ctx, pr)
@@ -120,7 +124,7 @@ func TestService_CreateAssignsReviewers(t *testing.T) {
 		},
 	}
 
-	service := &service{
+	service := &svc{
 		teams: testTeamRepo{
 			getFn: func(ctx context.Context, name domain.TeamName) (team.Team, error) {
 				return teamAggregate, nil
@@ -169,7 +173,7 @@ func TestService_Merge(t *testing.T) {
 	}
 	stored = pr
 
-	s := &service{
+	s := &svc{
 		prs: prRepo,
 	}
 
@@ -193,7 +197,7 @@ func TestService_Reassign(t *testing.T) {
 	oldReviewer := makeUser(t, "rev1", "backend", true)
 	newReviewer := makeUser(t, "rev3", "backend", true)
 
-	s := &service{
+	s := &svc{
 		prs: testPRRepo{
 			getFn: func(ctx context.Context, id domain.PullRequestID) (pullrequest.PullRequest, error) {
 				return stored, nil
@@ -240,7 +244,7 @@ func TestService_Reassign_NoCandidates(t *testing.T) {
 	oldReviewer := makeUser(t, "rev1", "backend", true)
 	teamAggregate, _ := team.New("backend", []user.User{oldReviewer})
 
-	s := &service{
+	s := &svc{
 		prs: testPRRepo{
 			getFn: func(ctx context.Context, id domain.PullRequestID) (pullrequest.PullRequest, error) {
 				return stored, nil
@@ -272,7 +276,7 @@ func TestService_Reassign_MergedPR(t *testing.T) {
 	_ = pr.AssignReviewers([]domain.UserID{"rev1"})
 	pr.Merge(time.Now())
 
-	s := &service{
+	s := &svc{
 		prs: testPRRepo{
 			getFn: func(ctx context.Context, id domain.PullRequestID) (pullrequest.PullRequest, error) {
 				return pr, nil

@@ -40,6 +40,9 @@ func (r testPRRepo) CreatePullRequest(ctx context.Context, pr pullrequest.PullRe
 func (r testPRRepo) GetPullRequest(ctx context.Context, id domain.PullRequestID) (pullrequest.PullRequest, error) {
 	return pullrequest.PullRequest{}, nil
 }
+func (r testPRRepo) GetPullRequestForUpdate(ctx context.Context, id domain.PullRequestID) (pullrequest.PullRequest, error) {
+	return pullrequest.PullRequest{}, nil
+}
 func (r testPRRepo) UpdatePullRequest(ctx context.Context, pr pullrequest.PullRequest) error {
 	return nil
 }

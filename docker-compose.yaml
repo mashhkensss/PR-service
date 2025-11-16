@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: reviewer-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: reviewer
+      POSTGRES_PASSWORD: reviewer
+      POSTGRES_DB: reviewer
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reviewer -d reviewer"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate:v4.17.0
+    container_name: reviewer-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations:ro
+    entrypoint: [
+      "/migrate",
+      "-path=/migrations",
+      "-database", "postgres://reviewer:reviewer@db:5432/reviewer?sslmode=disable"
+    ]
+    command: ["up"]
+    restart: "on-failure"
+
+  reviewer-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reviewer-service
+    env_file:
+      - .env
+    environment:
+      DB_DSN: postgres://reviewer:reviewer@db:5432/reviewer?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  db-data:

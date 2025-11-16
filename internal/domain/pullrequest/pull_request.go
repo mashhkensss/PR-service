@@ -46,15 +46,68 @@ func New(id domain.PullRequestID, name string, author domain.UserID, createdAt t
 	}, nil
 }
 
-func (pr PullRequest) PullRequestID() domain.PullRequestID { return pr.pullRequestID }
-func (pr PullRequest) PullRequestName() string             { return pr.pullRequestName }
-func (pr PullRequest) AuthorID() domain.UserID             { return pr.authorID }
-func (pr PullRequest) Status() domain.PullRequestStatus    { return pr.status }
-func (pr PullRequest) CreatedAt() time.Time                { return pr.createdAt }
-func (pr PullRequest) AssignedReviewers() []domain.UserID  { return slices.Clone(pr.assigned) }
-func (pr PullRequest) MergedAt() *time.Time                { return cloneTime(pr.mergedAt) }
-func (pr PullRequest) LastUpdate() time.Time               { return pr.lastUpdate }
-func (pr *PullRequest) touch()                             { pr.lastUpdate = time.Now().UTC() }
+func (pr *PullRequest) PullRequestID() domain.PullRequestID {
+	if pr == nil {
+		return ""
+	}
+	return pr.pullRequestID
+}
+
+func (pr *PullRequest) PullRequestName() string {
+	if pr == nil {
+		return ""
+	}
+	return pr.pullRequestName
+}
+
+func (pr *PullRequest) AuthorID() domain.UserID {
+	if pr == nil {
+		return ""
+	}
+	return pr.authorID
+}
+
+func (pr *PullRequest) Status() domain.PullRequestStatus {
+	if pr == nil {
+		return ""
+	}
+	return pr.status
+}
+
+func (pr *PullRequest) CreatedAt() time.Time {
+	if pr == nil {
+		return time.Time{}
+	}
+	return pr.createdAt
+}
+
+func (pr *PullRequest) AssignedReviewers() []domain.UserID {
+	if pr == nil {
+		return nil
+	}
+	return slices.Clone(pr.assigned)
+}
+
+func (pr *PullRequest) MergedAt() *time.Time {
+	if pr == nil {
+		return nil
+	}
+	return cloneTime(pr.mergedAt)
+}
+
+func (pr *PullRequest) LastUpdate() time.Time {
+	if pr == nil {
+		return time.Time{}
+	}
+	return pr.lastUpdate
+}
+
+func (pr *PullRequest) touch() {
+	if pr == nil {
+		return
+	}
+	pr.lastUpdate = time.Now().UTC()
+}
 
 func (pr *PullRequest) AssignReviewers(reviewers []domain.UserID) error {
 	if pr.status == domain.PullRequestStatusMerged {
