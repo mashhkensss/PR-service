@@ -8,29 +8,27 @@
 - `internal/service` — бизнес-логика (teams/users/pr/stats, стратегия назначения, tx-runner).
 - `internal/domain` — сущности, value objects и sentinels.
 - `internal/persistence/postgres` — репозитории поверх `database/sql`, миграции в `migrations/`.
-- `configs/env.local` — пример `.env`.
+- `configs/.env.example` — пример `.env`.
 - `openapi.yml` — контракт HTTP API.
 
 ## Запуск
 
-1. Подготовить переменные окружения:
+### Docker Compose
+
+1. Запустить сервисы (Postgres + миграции + приложение):
    ```bash
-   cp configs/env.local .env
+   docker compose up --build
    ```
-2. Запустить docker-compose (Postgres + миграции + приложение):
-   ```bash
-   make compose-up
-   ```
-3. Проверить готовность сервиса:
+    или
+    ```bash
+   docker-compose up
+    ```
+   Compose автоматически использует дефолтные переменные из `configs/.env.example`, так что дополнительных шагов после клонирования не требуется.
+2. Проверить готовность сервиса:
    ```bash
    curl http://localhost:8080/health/ready
    ```
    Liveness доступен по `GET /health/live`.
-4. Для локального запуска без Docker:
-   ```bash
-   source .env
-   make run
-   ```
 
 ### Основные переменные
 
